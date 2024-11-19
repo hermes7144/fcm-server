@@ -35,3 +35,6 @@ coverage/
 # npm package lock file (optional, if you don't want to commit it)
 # package-lock.json
 # yarn.lock
+
+# Local Netlify folder
+.netlify

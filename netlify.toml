@@ -1,0 +1,6 @@
+[build]
+  functions = "functions" # 서버리스 함수 디렉토리
+
+[dev]
+  functions = "functions"
+  port = 8888
