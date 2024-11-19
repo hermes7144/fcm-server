@@ -1,63 +1,67 @@
-const express = require('express');
-require('dotenv').config();
 const admin = require('firebase-admin');
-const bodyParser = require('body-parser');
-const cors = require('cors'); // CORS 미들웨어 추가
 
-// Firebase Admin SDK 초기화
-const serviceAccount = {
-  project_id: process.env.FIREBASE_PROJECT_ID,
-  private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
-  private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-  client_email: process.env.FIREBASE_CLIENT_EMAIL,
-  client_id: process.env.FIREBASE_CLIENT_ID,
-};
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+// Firebase Admin SDK 초기화 (중복 초기화 방지)
+if (admin.apps.length === 0) {
 
-// Express 앱 설정
-const app = express();
-const port = 3000;
-
-// Body Parser 설정
-app.use(cors()); // 모든 도메인에서 요청을 허용
-app.use(bodyParser.json());
-
-// 기본 경로
-app.get('/', (req, res) => {
-  res.send('Firebase Push Notification Server');
-});
-
-// 푸시 알림을 보내는 API
-
-app.post('/send-notification', (req, res) => {
-  const { token, title, body } = req.body;
-    
-  if (!token || !title || !body) {
-    return res.status(400).send('유효하지 않은 요청 데이터');
-  }
-
-  const message = {
-    token: token, // 여기서 token을 전달
-    notification: {
-      title: title,
-      body: body,
-    },
+  const serviceAccount = {
+    project_id: process.env.FIREBASE_PROJECT_ID,
+    private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+    private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    client_email: process.env.FIREBASE_CLIENT_EMAIL,
+    client_id: process.env.FIREBASE_CLIENT_ID,
   };
 
-  // FCM 메시지 전송
-  admin.messaging().send(message)
-    .then((response) => {
-      res.status(200).send('푸시 알림 전송 성공: ' + response);
-    })
-    .catch((error) => {
-      console.error('푸시 알림 전송 실패:', error);
-      res.status(500).send('푸시 알림 전송 실패: ' + error);
-    });
-});
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+}
 
-// 서버 시작
-app.listen(port, () => {
-  console.log(`FCM 서버가 http://localhost:${port}에서 실행 중입니다.`);
-});
+exports.handler = async (event, context) => {
+
+  // OPTIONS 메서드에 대한 응답
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*', // 모든 도메인 허용
+        'Access-Control-Allow-Headers': 'Content-Type', // 요청 헤더 허용
+        'Access-Control-Allow-Methods': 'POST, GET, OPTIONS', // 허용된 HTTP 메서드
+      },
+    };
+  }
+  const { token, title, body } = JSON.parse(event.body); // JSON 파싱
+
+  try {
+    // 실제 요청 처리 (예: 푸시 알림 전송, DB 작업 등)
+    const message = {
+      notification: {
+        title,
+        body,
+      },
+      token: token, // 다수의 토큰을 배열로 전달
+    };
+
+
+    console.log(message);
+    
+
+    // Firebase Cloud Messaging (FCM)으로 푸시 알림 전송
+    const response = await admin.messaging().send(message);
+
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*', // 모든 도메인 허용
+      },
+      body: JSON.stringify({ message: 'Success', response }),
+    };
+  } catch (error) {
+    return {
+      statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      },
+      body: JSON.stringify({ error: 'Something went wrong!', details: error.message }),
+    };
+  }
+};
