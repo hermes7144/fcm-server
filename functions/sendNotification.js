@@ -29,7 +29,7 @@ exports.handler = async (event, context) => {
       },
     };
   }
-  const { token, title, body } = JSON.parse(event.body); // JSON 파싱
+  const { tokens, title, body } = JSON.parse(event.body); // JSON 파싱
 
   try {
     const message = {
@@ -37,7 +37,7 @@ exports.handler = async (event, context) => {
         title,
         body,
       },
-      tokens: token,
+      tokens
     };
 
     const response = admin.messaging().sendEachForMulticast(message);
