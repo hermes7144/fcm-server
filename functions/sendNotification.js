@@ -11,21 +11,21 @@ if (admin.apps.length === 0) {
     client_id: process.env.FIREBASE_CLIENT_ID,
   };
 
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
+  if (!admin.apps.length) {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+  }
 }
 
 exports.handler = async (event, context) => {
-
-  // OPTIONS 메서드에 대한 응답
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*', // 모든 도메인 허용
         'Access-Control-Allow-Headers': 'Content-Type', // 요청 헤더 허용
-        'Access-Control-Allow-Methods': 'POST, GET, OPTIONS', // 허용된 HTTP 메서드
+        'Access-Control-Allow-Methods': 'POST, OPTIONS', // 허용된 HTTP 메서드
       },
     };
   }
@@ -45,7 +45,7 @@ exports.handler = async (event, context) => {
     return {
       statusCode: 200,
       headers: {
-        'Access-Control-Allow-Origin': '*', // 모든 도메인 허용
+        'Access-Control-Allow-Origin': '*',
       },
       body: JSON.stringify({ message: 'Success', response }),
     };
