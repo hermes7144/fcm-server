@@ -37,10 +37,10 @@ exports.handler = async (event, context) => {
         title,
         body,
       },
-      token: token,
+      tokens: token,
     };
 
-    const response = await admin.messaging().sendAll(message);
+    const response = admin.messaging().sendEachForMulticast(message);
 
     return {
       statusCode: 200,
