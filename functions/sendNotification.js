@@ -32,21 +32,15 @@ exports.handler = async (event, context) => {
   const { token, title, body } = JSON.parse(event.body); // JSON 파싱
 
   try {
-    // 실제 요청 처리 (예: 푸시 알림 전송, DB 작업 등)
     const message = {
       notification: {
         title,
         body,
       },
-      token: token, // 다수의 토큰을 배열로 전달
+      token: token,
     };
 
-
-    console.log(message);
-    
-
-    // Firebase Cloud Messaging (FCM)으로 푸시 알림 전송
-    const response = await admin.messaging().send(message);
+    const response = await admin.messaging().sendAll(message);
 
     return {
       statusCode: 200,
