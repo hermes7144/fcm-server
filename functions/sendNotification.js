@@ -19,42 +19,55 @@ if (admin.apps.length === 0) {
 }
 
 exports.handler = async (event, context) => {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*', // 모든 도메인 허용
+    'Access-Control-Allow-Headers': '*', // 모든 헤더 허용
+    'Access-Control-Allow-Methods': '*', // 모든 HTTP 메서드 허용
+  };
+
+  // CORS Preflight 요청 처리
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*', // 모든 도메인 허용
-        'Access-Control-Allow-Headers': 'Content-Type', // 요청 헤더 허용
-        'Access-Control-Allow-Methods': 'POST, OPTIONS', // 허용된 HTTP 메서드
-      },
+      headers: corsHeaders,
     };
   }
-  const { tokens, title, body } = JSON.parse(event.body); // JSON 파싱
 
   try {
+    const { tokens, title, body } = JSON.parse(event.body); // 요청 바디 파싱
+
     const message = {
       notification: {
         title,
         body,
       },
-      tokens
+      tokens,
     };
 
-    const response = admin.messaging().sendEachForMulticast(message);
+    const response = await admin.messaging().sendEachForMulticast(message);
+
+    console.log("Messages sent successfully:", response.successCount);
+    console.log("Messages failed:", response.failureCount);
+
+    response.responses.forEach((res, idx) => {
+      if (res.success) {
+        console.log(`Message to token[${idx}] succeeded: ${res.messageId}`);
+      } else {
+        console.error(`Message to token[${idx}] failed: ${res.error}`);
+      }
+    });
 
     return {
       statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-      },
-      body: JSON.stringify({ message: 'Success', response }),
+      headers: corsHeaders,
+      body: JSON.stringify({ success: true, message: 'Messages sent successfully!' }),
     };
   } catch (error) {
+    console.error("Error sending messages:", error);
+
     return {
       statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-      },
+      headers: corsHeaders,
       body: JSON.stringify({ error: 'Something went wrong!', details: error.message }),
     };
   }
